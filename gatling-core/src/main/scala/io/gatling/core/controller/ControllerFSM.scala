@@ -15,6 +15,8 @@
  */
 package io.gatling.core.controller
 
+import scala.concurrent.duration.FiniteDuration
+
 import io.gatling.core.scenario.Scenario
 import io.gatling.core.akka.BaseActor
 
@@ -30,8 +32,20 @@ private[controller] object ControllerState {
   case object Stopped extends ControllerState
 }
 
-private[controller] class UserCounts(var completed: Long, var expected: Long) {
-  def allStopped: Boolean = expected > 0 && completed == expected
+private[controller] class UserCounts {
+
+  private[this] var expectedSet: Boolean = false
+  private[this] var expected: Long = 0
+  private[this] var completed: Long = 0
+
+  def setExpected(expected: Long): Unit = {
+    expectedSet = true
+    this.expected = expected
+  }
+
+  def incrementCompleted(): Unit = completed += 1
+
+  def allStopped: Boolean = expectedSet && completed == expected
 }
 
 private[controller] sealed trait ControllerData
@@ -39,13 +53,15 @@ private[controller] object ControllerData {
   case object NoData extends ControllerData
   case class InitData(launcher: ActorRef, scenarios: List[Scenario])
   case class StartedData(initData: InitData, userCounts: UserCounts) extends ControllerData
-  case class EndData(initData: InitData, exception: Option[Throwable]) extends ControllerData
+  case class EndData(initData: InitData, exception: Option[Exception]) extends ControllerData
 }
 
 sealed trait ControllerCommand
 object ControllerCommand {
   case class Start(scenarios: List[Scenario]) extends ControllerCommand
   case class InjectionStopped(count: Long) extends ControllerCommand
-  case class ForceStop(e: Option[Throwable] = None) extends ControllerCommand
+  case class Crash(exception: Exception) extends ControllerCommand
+  case class MaxDurationReached(duration: FiniteDuration) extends ControllerCommand
+  case object Kill extends ControllerCommand
   case object StatsEngineStopped extends ControllerCommand
 }

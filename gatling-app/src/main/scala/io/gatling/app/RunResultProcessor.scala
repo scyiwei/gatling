@@ -19,19 +19,31 @@ import io.gatling.app.cli.StatusCode
 import io.gatling.charts.report.{ ReportsGenerationInputs, ReportsGenerator }
 import io.gatling.charts.stats.LogFileReader
 import io.gatling.commons.stats.assertion.{ AssertionResult, AssertionValidator }
-import io.gatling.commons.util.TimeHelper._
+import io.gatling.commons.util.ClockSingleton._
 import io.gatling.core.config.GatlingConfiguration
 
-trait RunResultProcessor {
+private[app] object RunResultProcessor {
 
-  def processRunResult(runResult: RunResult): StatusCode
+  def apply(configuration: GatlingConfiguration): RunResultProcessor =
+    configuration.resolve(
+      // [fl]
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      // [fl]
+      new RunResultProcessor(configuration)
+    )
 }
 
-class LogFileProcessor(configuration: GatlingConfiguration) extends RunResultProcessor {
+class RunResultProcessor(configuration: GatlingConfiguration) {
 
   implicit val config = configuration
 
-  override def processRunResult(runResult: RunResult): StatusCode = {
+  def processRunResult(runResult: RunResult): StatusCode = {
     val start = nowMillis
 
     initLogFileReader(runResult) match {

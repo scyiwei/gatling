@@ -71,16 +71,12 @@ case object ResponseTime extends TimeMetric {
 // ------------------- //
 
 sealed trait TimeSelection extends Printable
-sealed trait CountSelection extends Printable
 
-case object Count extends CountSelection {
+case object Count extends Printable {
   val printable = "count"
 }
-case object Percent extends CountSelection {
+case object Percent extends Printable {
   val printable = "percentage"
-}
-case object PerMillion extends CountSelection {
-  val printable = "per_million"
 }
 case object Min extends TimeSelection {
   val printable = "min"
@@ -103,7 +99,12 @@ case class Percentiles(value: Double) extends TimeSelection {
 // ---------------- //
 
 sealed trait Target extends Printable
-case class CountTarget(metric: CountMetric, selection: CountSelection) extends Target {
+case class CountTarget(metric: CountMetric) extends Target {
+  val selection = Count
+  val printable = s"${selection.printable} of ${metric.printable}"
+}
+case class PercentTarget(metric: CountMetric) extends Target {
+  val selection = Percent
   val printable = s"${selection.printable} of ${metric.printable}"
 }
 case class TimeTarget(metric: TimeMetric, selection: TimeSelection) extends Target {
@@ -116,27 +117,34 @@ case object MeanRequestsPerSecondTarget extends Target {
 // ------------------- //
 // -- Condition ADT -- //
 // ------------------- //
-
 sealed trait Condition extends Printable {
-  def values: List[Int]
+  def values: List[Double]
 }
-case class LessThan(value: Int) extends Condition {
-  val printable = "is less than"
+case class Lte(value: Double) extends Condition {
+  val printable = "is less than or equal to"
+  override def values: List[Double] = List(value)
+}
+case class Gte(value: Double) extends Condition {
+  val printable = "is greater than or equal to"
   override def values = List(value)
 }
-case class GreaterThan(value: Int) extends Condition {
+case class Lt(value: Double) extends Condition {
+  val printable = "is less than"
+  override def values: List[Double] = List(value)
+}
+case class Gt(value: Double) extends Condition {
   val printable = "is greater than"
   override def values = List(value)
 }
-case class Is(value: Int) extends Condition {
+case class Is(value: Double) extends Condition {
   val printable = "is"
   override def values = List(value)
 }
-case class Between(lowerBound: Int, upperBound: Int) extends Condition {
-  val printable = "is between"
+case class Between(lowerBound: Double, upperBound: Double, inclusive: Boolean) extends Condition {
+  val printable = "is between" + (if (inclusive) " inclusive" else "")
   override def values = List(lowerBound, upperBound)
 }
-case class In(elements: List[Int]) extends Condition {
+case class In(elements: List[Double]) extends Condition {
   val printable = "is in"
   override def values = elements
 }

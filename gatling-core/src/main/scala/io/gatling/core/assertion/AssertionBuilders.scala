@@ -24,13 +24,13 @@ class AssertionWithPath(path: AssertionPath)(implicit configuration: GatlingConf
   def allRequests = new AssertionWithPathAndCountMetric(path, AllRequests)
   def failedRequests = new AssertionWithPathAndCountMetric(path, FailedRequests)
   def successfulRequests = new AssertionWithPathAndCountMetric(path, SuccessfulRequests)
-  def requestsPerSec = new AssertionWithPathAndTarget(path, MeanRequestsPerSecondTarget)
+  def requestsPerSec = new AssertionWithPathAndTarget[Int](path, MeanRequestsPerSecondTarget)
 }
 
 class AssertionWithPathAndTimeMetric(path: AssertionPath, metric: TimeMetric)(implicit configuration: GatlingConfiguration) {
 
   private def next(selection: TimeSelection) =
-    new AssertionWithPathAndTarget(path, TimeTarget(metric, selection))
+    new AssertionWithPathAndTarget[Int](path, TimeTarget(metric, selection))
 
   def min = next(Min)
   def max = next(Max)
@@ -44,23 +44,30 @@ class AssertionWithPathAndTimeMetric(path: AssertionPath, metric: TimeMetric)(im
 
 class AssertionWithPathAndCountMetric(path: AssertionPath, metric: CountMetric) {
 
-  private def next(selection: CountSelection) =
-    new AssertionWithPathAndTarget(path, CountTarget(metric, selection))
-
-  def count = next(Count)
-  def percent = next(Percent)
-  def perMillion = next(PerMillion)
+  def count = new AssertionWithPathAndTarget[Long](path, CountTarget(metric))
+  def percent = new AssertionWithPathAndTarget[Double](path, PercentTarget(metric))
+  def perMillion = new AssertionWithPathAndTarget[Double](path, PercentTarget(metric), adaptTargetValuesForPerMillion = true)
 }
 
-class AssertionWithPathAndTarget(path: AssertionPath, target: Target) {
+class AssertionWithPathAndTarget[T: Numeric](path: AssertionPath, target: Target, adaptTargetValuesForPerMillion: Boolean = false) {
 
   def next(condition: Condition) =
     Assertion(path, target, condition)
 
-  def lessThan(threshold: Int) = next(LessThan(threshold))
-  def greaterThan(threshold: Int) = next(GreaterThan(threshold))
-  def between(min: Int, max: Int) = next(Between(min, max))
-  def is(value: Int) = next(Is(value))
-  def in(set: Set[Int]) = next(In(set.toList))
-  def in(values: Int*) = next(In(values.toSet.toList))
+  val numeric = implicitly[Numeric[T]]
+
+  private[this] def adaptTargetValue(value: Double): Double = if (adaptTargetValuesForPerMillion) value / 10000 else value
+
+  def lt(threshold: T): Assertion = next(Lt(adaptTargetValue(numeric.toDouble(threshold))))
+  @deprecated("Will be removed in 3.0, use lte instead", "3.0.0-M2")
+  def lessThan(threshold: T): Assertion = lte(threshold)
+  def lte(threshold: T): Assertion = next(Lte(adaptTargetValue(numeric.toDouble(threshold))))
+  def gt(threshold: T): Assertion = next(Gt(adaptTargetValue(numeric.toDouble(threshold))))
+  @deprecated("Will be removed in 3.0, use gte instead", "3.0.0-M2")
+  def greaterThan(threshold: T): Assertion = gte(threshold)
+  def gte(threshold: T): Assertion = next(Gte(adaptTargetValue(numeric.toDouble(threshold))))
+  def between(min: T, max: T, inclusive: Boolean = true): Assertion = next(Between(adaptTargetValue(numeric.toDouble(min)), adaptTargetValue(numeric.toDouble(max)), inclusive))
+  def is(value: T): Assertion = next(Is(adaptTargetValue(numeric.toDouble(value))))
+  def in(set: Set[T]): Assertion = next(In(set.map(v => adaptTargetValue(numeric.toDouble(v))).toList))
+  def in(values: T*): Assertion = in(values.toSet)
 }

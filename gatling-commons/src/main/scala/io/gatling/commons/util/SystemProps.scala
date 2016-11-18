@@ -15,19 +15,10 @@
  */
 package io.gatling.commons.util
 
-import java.lang.System.{ currentTimeMillis, nanoTime }
+object SystemProps {
 
-import scala.concurrent.duration._
-
-object TimeHelper {
-
-  val ZeroMs = 0 millisecond
-
-  val CurrentTimeMillisReference = currentTimeMillis
-  val NanoTimeReference = nanoTime
-
-  def computeTimeMillisFromNanos(nanos: Long) = (nanos - NanoTimeReference) / 1000000 + CurrentTimeMillisReference
-  def nowMillis = computeTimeMillisFromNanos(nanoTime)
-  def unpreciseNowMillis = currentTimeMillis
-  def nowSeconds = computeTimeMillisFromNanos(nanoTime) / 1000
+  def setSystemPropertyIfUndefined(name: String, value: Any): Unit =
+    if (System.getProperty(name) == null) {
+      System.setProperty(name, value.toString)
+    }
 }

@@ -17,7 +17,8 @@ package io.gatling.http.ahc
 
 import java.util.concurrent.TimeUnit
 
-import io.gatling.core.{ CoreComponents, ConfigKeys }
+import io.gatling.commons.util.SystemProps._
+import io.gatling.core.{ ConfigKeys, CoreComponents }
 import io.gatling.core.session.Session
 import io.gatling.http.resolver.ExtendedDnsNameResolver
 import io.gatling.http.util.SslHelper._
@@ -27,8 +28,8 @@ import com.typesafe.scalalogging.StrictLogging
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.concurrent.DefaultThreadFactory
-import io.netty.util.internal.logging.{ Slf4JLoggerFactory, InternalLoggerFactory }
-import io.netty.util.{ Timer, HashedWheelTimer }
+import io.netty.util.internal.logging.{ InternalLoggerFactory, Slf4JLoggerFactory }
+import io.netty.util.{ HashedWheelTimer, Timer }
 import org.asynchttpclient.AsyncHttpClientConfig._
 import org.asynchttpclient._
 
@@ -60,12 +61,6 @@ private[gatling] class DefaultAhcFactory(system: ActorSystem, coreComponents: Co
 
   val configuration = coreComponents.configuration
   val ahcConfig = configuration.http.ahc
-
-  private def setSystemPropertyIfUndefined(name: String, value: Any): Unit =
-    if (System.getProperty(name) == null) {
-      System.setProperty(name, value.toString)
-    }
-
   setSystemPropertyIfUndefined("io.netty.allocator.type", configuration.http.ahc.allocator)
   setSystemPropertyIfUndefined("io.netty.maxThreadLocalCharBufferSize", configuration.http.ahc.maxThreadLocalCharBufferSize)
 
@@ -104,10 +99,6 @@ private[gatling] class DefaultAhcFactory(system: ActorSystem, coreComponents: Co
         case Nil => null
         case ps  => ps.toArray
       })
-      .setEnabledCipherSuites(ahcConfig.sslEnabledCipherSuites match {
-        case Nil => null
-        case ps  => ps.toArray
-      })
       .setSslSessionCacheSize(ahcConfig.sslSessionCacheSize)
       .setSslSessionTimeout(ahcConfig.sslSessionTimeout)
       .setHttpClientCodecMaxInitialLineLength(ahcConfig.httpClientCodecMaxInitialLineLength)
@@ -118,12 +109,15 @@ private[gatling] class DefaultAhcFactory(system: ActorSystem, coreComponents: Co
       .setUseOpenSsl(ahcConfig.useOpenSsl)
       .setUseNativeTransport(ahcConfig.useNativeTransport)
       .setValidateResponseHeaders(false)
-      .setUsePooledMemory(ahcConfig.usePooledMemory)
       .setTcpNoDelay(ahcConfig.tcpNoDelay)
       .setSoReuseAddress(ahcConfig.soReuseAddress)
       .setSoLinger(ahcConfig.soLinger)
       .setSoSndBuf(ahcConfig.soSndBuf)
       .setSoRcvBuf(ahcConfig.soRcvBuf)
+
+    if (ahcConfig.sslEnabledCipherSuites.nonEmpty) {
+      ahcConfigBuilder.setEnabledCipherSuites(ahcConfig.sslEnabledCipherSuites.toArray)
+    }
 
     val keyManagerFactory = configuration.http.ssl.keyStore
       .map(config => newKeyManagerFactory(config.storeType, config.file, config.password, config.algorithm))

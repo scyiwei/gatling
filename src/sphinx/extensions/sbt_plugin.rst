@@ -7,7 +7,7 @@ This SBT plugin integrates Gatling with SBT, allowing to use Gatling as a testin
 Versions
 ========
 
-Check out available available versions on `Bintray <https://bintray.com/gatling/sbt-plugins/gatling-sbt/view#>`.
+Check out available versions on `Bintray <https://bintray.com/gatling/sbt-plugins/gatling-sbt/view#>`.
 
 Beware that milestones (M versions) are undocumented and releases for Gatling customers.
 
@@ -57,7 +57,7 @@ meaning you'll need to prefix them with `gatling` or `gatling-it`, eg. `gatling:
 
 .. note::
 
-This behavior differs from what previously possible, eg. calling `test` without prefixing started Gatling simulations.
+This behavior differs from what was previously possible, eg. calling `test` without prefixing started Gatling simulations.
 However, this caused many interferences with other testing libraries and forcing the use of a prefix solves those issues.
 
 'Test' vs 'Integration Tests' configurations

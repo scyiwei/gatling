@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
 import io.gatling.commons.stats.Status
-import io.gatling.commons.util.TimeHelper._
+import io.gatling.commons.util.ClockSingleton._
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.controller.ControllerCommand
 import io.gatling.core.scenario.SimulationParams
@@ -30,7 +30,7 @@ import io.gatling.core.session.{ GroupBlock, Session }
 import io.gatling.core.stats.message.ResponseTimings
 import io.gatling.core.stats.writer._
 
-import akka.actor.{ Props, Actor, ActorRef, ActorSystem }
+import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -38,7 +38,7 @@ trait StatsEngine {
 
   def start(): Unit
 
-  def stop(replyTo: ActorRef): Unit
+  def stop(replyTo: ActorRef, exception: Option[Exception]): Unit
 
   def logUser(userMessage: UserMessage): Unit
 
@@ -109,7 +109,7 @@ class DataWritersStatsEngine(system: ActorSystem, dataWriters: Seq[ActorRef]) ex
 
   override def start(): Unit = {}
 
-  override def stop(replyTo: ActorRef): Unit =
+  override def stop(replyTo: ActorRef, exception: Option[Exception]): Unit =
     if (active.getAndSet(false)) {
       implicit val dispatcher = system.dispatcher
       implicit val dataWriterTimeOut = Timeout(5 seconds)

@@ -20,6 +20,7 @@ import java.util.ResourceBundle
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.io.Codec
 
 import io.gatling.commons.util.{StringHelper, ConfigHelper}
@@ -194,7 +195,6 @@ object GatlingConfiguration extends StrictLogging {
           sslSessionTimeout = config.getInt(http.ahc.SslSessionTimeout),
           useOpenSsl = config.getBoolean(http.ahc.UseOpenSsl),
           useNativeTransport = config.getBoolean(http.ahc.UseNativeTransport),
-          usePooledMemory = config.getBoolean(http.ahc.UsePooledMemory),
           tcpNoDelay = config.getBoolean(http.ahc.TcpNoDelay),
           soReuseAddress = config.getBoolean(http.ahc.SoReuseAddress),
           soLinger = config.getInt(http.ahc.SoLinger),
@@ -233,10 +233,6 @@ object GatlingConfiguration extends StrictLogging {
         )
       ),
       // [fl]
-      //
-      //
-      //
-      //
       //
       //
       //
@@ -352,7 +348,6 @@ case class AhcConfiguration(
   sslSessionTimeout:                   Int,
   useOpenSsl:                          Boolean,
   useNativeTransport:                  Boolean,
-  usePooledMemory:                     Boolean,
   tcpNoDelay:                          Boolean,
   soReuseAddress:                      Boolean,
   soLinger:                            Int,
@@ -423,27 +418,19 @@ case class GraphiteDataWriterConfiguration(
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
 // [fl]
 
 case class GatlingConfiguration(
-     core:      CoreConfiguration,
-     charting:  ChartingConfiguration,
-     http:      HttpConfiguration,
-     jms:       JmsConfiguration,
-     data:      DataConfiguration,
-     // [fl]
-     //
-     // [fl]
-     config:    Config
+  core:      CoreConfiguration,
+  charting:  ChartingConfiguration,
+  http:      HttpConfiguration,
+  jms:       JmsConfiguration,
+  data:      DataConfiguration,
+  // [fl]
+  //
+  // [fl]
+  config:    Config
 ) {
-
   def resolve[T](value: T): T = value
 
   // [fl]

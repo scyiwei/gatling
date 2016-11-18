@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gatling.core.action.builder
+package io.gatling.commons.util
 
-import io.gatling.core.action.{ Action, TryMax }
-import io.gatling.core.session.Expression
-import io.gatling.core.structure.{ ChainBuilder, ScenarioContext }
+import scala.concurrent.Future
 
-class TryMaxBuilder(times: Expression[Int], counterName: String, loopNext: ChainBuilder) extends ActionBuilder {
+object Futures {
 
-  override def build(ctx: ScenarioContext, next: Action): Action = {
-    import ctx._
-    val tryMaxAction = new TryMax(times, counterName, coreComponents.statsEngine, next)
-    val loopNextAction = loopNext.build(ctx, tryMaxAction)
-    tryMaxAction.initialize(loopNextAction, ctx.system)
-    tryMaxAction
-  }
+  // TODO remove in Scala 2.12
+  val unit: Future[Unit] = Future.successful(())
 }
